@@ -9,8 +9,7 @@
   const nameE  = { 1: document.getElementById("p1name"),  2: document.getElementById("p2name") };
   const muteBt = document.getElementById("mute");
 
-  document.addEventListener("pointerdown", startMusic, { once: true });
-  document.addEventListener("keydown", startMusic, { once: true });
+  muteBt.addEventListener("pointerdown", startMusic, { once: true });
 
   const DOT = 14;
   const CPU_DELAY = 450;
@@ -283,11 +282,6 @@
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(sizeBoard, 100);
-  });
-
-  muteBt.addEventListener("click", () => {
-  music.muted = !music.muted;
-  updateMuteBtn();
   });
 
   newGame();
