@@ -12,7 +12,7 @@
 
   const music = new Audio("background_music.mp3");
   music.loop = true;
-  music.volume = 0.5;
+  music.volume = 0.05;
 
   // State
   let R, C;            // rows / columns of boxes
