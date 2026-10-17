@@ -7,9 +7,17 @@
   const cards  = { 1: document.getElementById("p1card"),  2: document.getElementById("p2card") };
   const scoreE = { 1: document.getElementById("p1score"), 2: document.getElementById("p2score") };
   const nameE  = { 1: document.getElementById("p1name"),  2: document.getElementById("p2name") };
+  const muteBt = document.getElementById("mute");
+
+  document.addEventListener("pointerdown", startMusic, { once: true });
+  document.addEventListener("keydown", startMusic, { once: true });
 
   const DOT = 14;
   const CPU_DELAY = 450;
+
+  const music = new Audio("background_music.mp3");
+  music.loop = true;
+  music.volume = 0.5;
 
   // State
   let R, C;            // rows / columns of boxes
@@ -26,6 +34,9 @@
   let cpuTimer = null;
 
   // ---------- Setup ----------
+
+
+
   function newGame() {
     clearTimeout(cpuTimer);
     const n = parseInt(sizeSel.value, 10);
@@ -44,6 +55,12 @@
     nameE[2].textContent = names[2];
     buildBoard();
     updateUI();
+  }
+
+  function startMusic() {
+    if (music.paused) {
+     music.play().catch(err => console.warn("Music blocked or not found:", err));
+    }
   }
 
   function grid(rows, cols) {
@@ -191,7 +208,6 @@
     }
   }
 
-  // ---------- Computer AI ----------
   function chooseCpuMove() {
     const moves = availableMoves(H, V);
 
@@ -267,6 +283,11 @@
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(sizeBoard, 100);
+  });
+
+  muteBt.addEventListener("click", () => {
+  music.muted = !music.muted;
+  updateMuteBtn();
   });
 
   newGame();
