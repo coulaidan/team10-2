@@ -107,7 +107,7 @@
 
   function sizeBoard() {
     const avail = Math.min(window.innerWidth - 64, 520);
-    const line = Math.max(28, Math.min(72, Math.floor((avail - (C + 1) * DOT) / C)));
+    const line = Math.max(28, Math.min(72, Math.floor((avail - (C + 1) * 14) / C)));
     boardEl.style.setProperty("--line", line + "px");
     boardEl.style.gridTemplateColumns = `repeat(${C}, var(--dot) var(--line)) var(--dot)`;
     boardEl.style.gridTemplateRows    = `repeat(${R}, var(--dot) var(--line)) var(--dot)`;
