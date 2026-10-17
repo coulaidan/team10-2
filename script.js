@@ -9,13 +9,13 @@
   const nameE  = { 1: document.getElementById("p1name"),  2: document.getElementById("p2name") };
   const muteBt = document.getElementById("mute");
 
+  muteBt.addEventListener("pointerdown", startMusic, { once: true });
 
   const DOT = 14;
   const CPU_DELAY = 450;
 
   const music = new Audio("background_music.mp3");
   music.loop = true;
-  music.volume = 0.5;
 
   // State
   let R, C;            // rows / columns of boxes
@@ -281,11 +281,6 @@
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(sizeBoard, 100);
-  });
-
-  muteBt.addEventListener("click", () => {
-  music.muted = !music.muted;
-  updateMuteBtn();
   });
 
   newGame();
