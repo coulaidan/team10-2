@@ -1,0 +1,227 @@
+:root {
+  --bg: #f6f4ef;
+  --ink: #1f2430;
+  --muted: #6b7280;
+  --card: #ffffff;
+  --p1: #2563eb;
+  --p2: #e11d48;
+  --dot: 14px;
+  --line: 64px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14161c;
+    --ink: #e8e9ed;
+    --muted: #9aa0ab;
+    --card: #1d2028;
+    --p1: #60a5fa;
+    --p2: #fb7185;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.app {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- Controls ---------- */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+select,
+button {
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  background: var(--card);
+  color: var(--ink);
+}
+
+button {
+  cursor: pointer;
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+button:hover { opacity: 0.85; }
+
+/* ---------- Scoreboard ---------- */
+.scoreboard {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.player {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 2px solid transparent;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.player .name { font-weight: 600; }
+.player .score {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.p1 .score { color: var(--p1); }
+.p2 .score { color: var(--p2); }
+.player.p1.active { border-color: var(--p1); transform: translateY(-2px); }
+.player.p2.active { border-color: var(--p2); transform: translateY(-2px); }
+
+.status {
+  margin: 0;
+  min-height: 1.4em;
+  color: var(--muted);
+  font-weight: 500;
+  text-align: center;
+}
+.status.win { color: var(--ink); font-weight: 700; font-size: 1.1rem; }
+
+.hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ---------- Board ---------- */
+.board {
+  display: grid;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  user-select: none;
+}
+
+.dot {
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  background: var(--ink);
+  position: relative;
+  z-index: 3;
+}
+
+.line {
+  position: relative;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: none;
+  cursor: pointer;
+  z-index: 2;
+}
+.line.h { width: var(--line); height: var(--dot); }
+.line.v { width: var(--dot); height: var(--line); }
+
+/* Larger invisible hit area */
+.line.h::before { content: ""; position: absolute; inset: -12px 0; }
+.line.v::before { content: ""; position: absolute; inset: 0 -12px; }
+
+/* Visible bar */
+.line::after {
+  content: "";
+  position: absolute;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
+  transition: background 0.15s, box-shadow 0.2s;
+}
+.line.h::after { left: 0; right: 0; top: calc(50% - 3px); height: 6px; }
+.line.v::after { top: 0; bottom: 0; left: calc(50% - 3px); width: 6px; }
+
+/* Hover preview in current player's colour */
+.board[data-turn="1"] .line:not(.taken):hover::after,
+.board[data-turn="1"] .line:not(.taken):focus-visible::after {
+  background: color-mix(in srgb, var(--p1) 45%, transparent);
+}
+.board[data-turn="2"] .line:not(.taken):hover::after,
+.board[data-turn="2"] .line:not(.taken):focus-visible::after {
+  background: color-mix(in srgb, var(--p2) 45%, transparent);
+}
+.line:focus { outline: none; }
+
+.line.taken { cursor: default; }
+.line.p1::after { background: var(--p1); }
+.line.p2::after { background: var(--p2); }
+.line.p1.last::after { box-shadow: 0 0 0 4px color-mix(in srgb, var(--p1) 28%, transparent); }
+.line.p2.last::after { box-shadow: 0 0 0 4px color-mix(in srgb, var(--p2) 28%, transparent); }
+
+.board.locked .line { cursor: wait; }
+.board.over .line { cursor: default; }
+
+/* Boxes */
+.box {
+  width: var(--line);
+  height: var(--line);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: calc(var(--line) * 0.36);
+  border-radius: 4px;
+}
+.box.p1 {
+  background: color-mix(in srgb, var(--p1) 20%, transparent);
+  color: var(--p1);
+  animation: pop 0.3s ease-out;
+}
+.box.p2 {
+  background: color-mix(in srgb, var(--p2) 20%, transparent);
+  color: var(--p2);
+  animation: pop 0.3s ease-out;
+}
+
+@keyframes pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  70%  { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); }
+}
