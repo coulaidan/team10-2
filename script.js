@@ -1,6 +1,5 @@
 (() => {
   const boardEl   = document.getElementById("board");
-  const sizeSel   = document.getElementById("size");
   const modeSel   = document.getElementById("mode");
   const restartBt = document.getElementById("restart");
   const statusEl  = document.getElementById("status");
@@ -9,7 +8,7 @@
   const nameE  = { 1: document.getElementById("p1name"),  2: document.getElementById("p2name") };
   const muteBt = document.getElementById("mute");
 
-  muteBt.addEventListener("pointerdown", startMusic, { once: true });
+  muteBt.addEventListener("pointerdown", updateMusic);
 
   const DOT = 14;
   const CPU_DELAY = 450;
@@ -38,8 +37,7 @@
 
   function newGame() {
     clearTimeout(cpuTimer);
-    const n = parseInt(sizeSel.value, 10);
-    R = C = n;
+    R = C = 6;
     mode = modeSel.value;
     names = mode === "cpu" ? { 1: "You", 2: "Computer" } : { 1: "Player 1", 2: "Player 2" };
     H = grid(R + 1, C);
@@ -56,9 +54,11 @@
     updateUI();
   }
 
-  function startMusic() {
+  function updateMusic() {
     if (music.paused) {
      music.play().catch(err => console.warn("Music blocked or not found:", err));
+    } else {
+     music.pause();
     }
   }
 
@@ -275,7 +275,6 @@
 
   // ---------- Events ----------
   restartBt.addEventListener("click", newGame);
-  sizeSel.addEventListener("change", newGame);
   modeSel.addEventListener("change", newGame);
 
   let resizeTimer;
