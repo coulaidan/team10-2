@@ -8,7 +8,6 @@
   const nameE  = { 1: document.getElementById("p1name"),  2: document.getElementById("p2name") };
   const muteBt = document.getElementById("mute");
 
-  const DOT = 14;
   const CPU_DELAY = 450;
 
   const music = new Audio("background_music.mp3");
