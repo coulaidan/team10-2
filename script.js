@@ -8,8 +8,6 @@
   const nameE  = { 1: document.getElementById("p1name"),  2: document.getElementById("p2name") };
   const muteBt = document.getElementById("mute");
 
-  muteBt.addEventListener("pointerdown", updateMusic);
-
   const DOT = 14;
   const CPU_DELAY = 450;
 
@@ -276,12 +274,7 @@
   // ---------- Events ----------
   restartBt.addEventListener("click", newGame);
   modeSel.addEventListener("change", newGame);
-
-  let resizeTimer;
-  window.addEventListener("resize", () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(sizeBoard, 100);
-  });
+  muteBt.addEventListener("pointerdown", updateMusic);
 
   newGame();
 })();
