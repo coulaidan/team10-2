@@ -9,8 +9,6 @@
   const nameE  = { 1: document.getElementById("p1name"),  2: document.getElementById("p2name") };
   const muteBt = document.getElementById("mute");
 
-  document.addEventListener("pointerdown", startMusic, { once: true });
-  document.addEventListener("keydown", startMusic, { once: true });
 
   const DOT = 14;
   const CPU_DELAY = 450;
