@@ -1,6 +1,8 @@
 (() => {
   const boardElement = document.getElementById("board");
   const modeSelector = document.getElementById("mode");
+  const difficultySelector = document.getElementById("difficulty");
+  const difficultyControl = document.getElementById("difficulty-control");
   const restartBtn = document.getElementById("restart");
   const statusElement = document.getElementById("status");
   const cards = { 1: document.getElementById("p1card"), 2: document.getElementById("p2card") };
@@ -8,7 +10,7 @@
   const nameElements = { 1: document.getElementById("p1name"), 2: document.getElementById("p2name") };
   const muteButton = document.getElementById("mute");
 
-  const GRID = 5;
+  const GRID = 6;
 
   const music = new Audio("background_music.mp3");
   music.loop = true;
@@ -16,7 +18,8 @@
 
   // State
   let H, V; // For the lines, stores coordinates via H[r][c], the value is the player who owns it (0 = empty) 
-  let boxes; // Uses the same logic but for boxes
+  let boxes; // Each box stores its owner and point value.
+  let claimedBoxes;
   let current; // Current player (1 or 2)
   let scores;
   let mode;
@@ -24,13 +27,14 @@
   let busy; // Used for CPU mid move
   let over;
   let lastSelected = null;
-  let els;              // DOM refs: { h, v, box }
+  let els; // DOM refs: { h, v, box }
   let cpuTimer = null;
 
   // ---------- Setup ----------
   function newGame() {
     clearTimeout(cpuTimer);
     mode = modeSelector.value;
+    difficultyControl.hidden = mode !== "cpu";
     if (mode === "cpu") {
       names = { 1: "You", 2: "Computer" };
     } else {
@@ -38,9 +42,13 @@
     }
     H = grid(GRID + 1, GRID);
     V = grid(GRID, GRID + 1);
-    boxes = grid(GRID, GRID);
+    boxes = grid(GRID, GRID).map(row => row.map(() => ({
+      owner: 0,
+      value: Math.floor(Math.random() * 5) + 1
+    })));
     current = 1;
     scores = { 1: 0, 2: 0 };
+    claimedBoxes = 0;
     busy = false;
     over = false;
     lastSelected = null;
@@ -87,6 +95,8 @@
           const r = (gr - 1) / 2, c = (gc - 1) / 2;
           el = document.createElement("div");
           el.className = "box";
+          el.textContent = boxes[r][c].value;
+          el.setAttribute("aria-label", `${boxes[r][c].value} points`);
           els.box[r][c] = el;
         }
         boardElement.appendChild(el);
@@ -143,11 +153,6 @@
     return moves;
   }
 
-  // How many boxes would this move complete?
-  function completes(h, v, m) {
-    return adjacentBoxes(m).filter(([r, c]) => sides(h, v, r, c) === 3).length;
-  }
-
   // Would this move leave a box with 3 sides (handing it to the opponent)?
   function isUnsafe(h, v, m) {
     return adjacentBoxes(m).some(([r, c]) => sides(h, v, r, c) === 2);
@@ -173,17 +178,19 @@
 
     let claimed = 0;
     for (const [r, c] of adjacentBoxes(m)) {
-      if (!boxes[r][c] && sides(H, V, r, c) === 4) {
-        boxes[r][c] = current;
-        scores[current]++;
+      const box = boxes[r][c];
+      if (!box.owner && sides(H, V, r, c) === 4) {
+        box.owner = current;
+        scores[current] += box.value;
+        claimedBoxes++;
         claimed++;
         const b = els.box[r][c];
         b.classList.add(`p${current}`);
-        b.textContent = mode === "cpu" ? names[current][0] : String(current);
+        b.setAttribute("aria-label", `${box.value} points, claimed by ${names[current]}`);
       }
     }
 
-    if (scores[1] + scores[2] === GRID * GRID) {
+    if (claimedBoxes === GRID * GRID) {
       over = true;
       updateUI();
       return;
@@ -205,23 +212,41 @@
 
   function chooseCpuMove() {
     const moves = availableMoves(H, V);
+    let best;
 
-    // 1. Take any box that can be completed.
-    const scoring = moves.filter(m => completes(H, V, m) > 0);
-    if (scoring.length) return pick(scoring);
-
-    // 2. Play a move that doesn't give the opponent a box.
-    const safe = moves.filter(m => !isUnsafe(H, V, m));
-    if (safe.length) return pick(safe);
-
-    // 3. Forced to give something away: give the smallest chain.
-    let best = [], bestCost = Infinity;
-    for (const m of moves) {
-      const cost = giveawayCost(m);
-      if (cost < bestCost) { bestCost = cost; best = [m]; }
-      else if (cost === bestCost) best.push(m);
+    // Prefer moves that claim the most points.
+    const scoring = moves.map(move => ({ move, points: pointsCompletedBy(H, V, move) }))
+      .filter(candidate => candidate.points > 0);
+    if (scoring.length) {
+      const maxPoints = Math.max(...scoring.map(candidate => candidate.points));
+      best = scoring.filter(candidate => candidate.points === maxPoints).map(candidate => candidate.move);
     }
-    return pick(best);
+
+    // Otherwise, avoid giving the opponent a box.
+    if (!best) {
+      best = moves.filter(m => !isUnsafe(H, V, m));
+    }
+
+    // If every move gives something away, minimize the points conceded.
+    if (!best.length) {
+      let bestCost = Infinity;
+      best = [];
+      for (const m of moves) {
+        const cost = giveawayCost(m);
+        if (cost < bestCost) { bestCost = cost; best = [m]; }
+        else if (cost === bestCost) best.push(m);
+      }
+    }
+
+    const bestChance = { easy: 0.5, medium: 0.75, hard: 1 }[difficultySelector.value];
+    if (Math.random() < bestChance || best.length === moves.length) return pick(best);
+    return pick(moves.filter(move => !best.includes(move)));
+  }
+
+  function pointsCompletedBy(h, v, m) {
+    return adjacentBoxes(m).reduce((total, [r, c]) => (
+      total + (sides(h, v, r, c) === 3 ? boxes[r][c].value : 0)
+    ), 0);
   }
 
   // Simulate: play m, then let the opponent greedily take every box available.
@@ -232,9 +257,18 @@
     let total = 0, found = true;
     while (found) {
       found = false;
+      let bestMove = null, bestPoints = 0;
       for (const mm of availableMoves(h, v)) {
-        const k = completes(h, v, mm);
-        if (k) { setLine(h, v, mm, 1); total += k; found = true; break; }
+        const points = pointsCompletedBy(h, v, mm);
+        if (points > bestPoints) {
+          bestMove = mm;
+          bestPoints = points;
+        }
+      }
+      if (bestMove) {
+        setLine(h, v, bestMove, 1);
+        total += bestPoints;
+        found = true;
       }
     }
     return total;
@@ -272,6 +306,7 @@
   // ---------- Events ----------
   restartBtn.addEventListener("click", newGame);
   modeSelector.addEventListener("change", newGame);
+  difficultySelector.addEventListener("change", newGame);
   muteButton.addEventListener("pointerdown", updateMusic);
 
   newGame();
