@@ -8,7 +8,7 @@
   const nameElements = { 1: document.getElementById("p1name"), 2: document.getElementById("p2name") };
   const muteButton = document.getElementById("mute");
 
-  const GRID = 6;
+  const GRID = 5;
 
   const music = new Audio("background_music.mp3");
   music.loop = true;
@@ -23,8 +23,8 @@
   let names;
   let busy; // Used for CPU mid move
   let over;
-  let lastEl = null;
-  let els;             // DOM refs: { h, v, box }
+  let lastSelected = null;
+  let els;              // DOM refs: { h, v, box }
   let cpuTimer = null;
 
   // ---------- Setup ----------
@@ -43,7 +43,7 @@
     scores = { 1: 0, 2: 0 };
     busy = false;
     over = false;
-    lastEl = null;
+    lastSelected = null;
     nameElements[1].textContent = names[1];
     nameElements[2].textContent = names[2];
     buildBoard();
@@ -167,9 +167,9 @@
     const el = m.t === "h" ? els.h[m.r][m.c] : els.v[m.r][m.c];
     el.classList.add("taken", `p${current}`);
     el.setAttribute("aria-disabled", "true");
-    if (lastEl) lastEl.classList.remove("last");
+    if (lastSelected) lastSelected.classList.remove("last");
     el.classList.add("last");
-    lastEl = el;
+    lastSelected = el;
 
     let claimed = 0;
     for (const [r, c] of adjacentBoxes(m)) {
