@@ -52,7 +52,7 @@
 
   function updateMusic() {
     if (music.paused) {
-     music.play().catch(err => console.warn("Music blocked or not found:", err));
+     music.play();
     } else {
      music.pause();
     }
