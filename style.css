@@ -185,6 +185,13 @@ button {
   background: #c43b3b;
 }
 
+#board[data-turn="1"] { --turn-color: #1769aa; }
+#board[data-turn="2"] { --turn-color: #c43b3b; }
+.line:not(.taken):hover::after,
+.line:not(.taken):focus-visible::after {
+  background: var(--turn-color);
+}
+
 .line:focus-visible {
   outline: 2px solid #222;
 }
