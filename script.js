@@ -1,22 +1,22 @@
 (() => {
-  const boardEl   = document.getElementById("board");
-  const modeSel   = document.getElementById("mode");
+  const boardEl = document.getElementById("board");
+  const modeSel = document.getElementById("mode");
   const restartBt = document.getElementById("restart");
-  const statusEl  = document.getElementById("status");
-  const cards  = { 1: document.getElementById("p1card"),  2: document.getElementById("p2card") };
+  const statusEl = document.getElementById("status");
+  const cards = { 1: document.getElementById("p1card"), 2: document.getElementById("p2card") };
   const scoreE = { 1: document.getElementById("p1score"), 2: document.getElementById("p2score") };
-  const nameE  = { 1: document.getElementById("p1name"),  2: document.getElementById("p2name") };
+  const nameE = { 1: document.getElementById("p1name"), 2: document.getElementById("p2name") };
   const muteBt = document.getElementById("mute");
 
   const CPU_DELAY = 450;
+  const GRID = 6;
 
   const music = new Audio("background_music.mp3");
   music.loop = true;
   music.volume = 0.05;
 
   // State
-  let R, C;            // rows / columns of boxes
-  let H, V;            // H[r][c]: horizontal lines (R+1 x C), V[r][c]: vertical lines (R x C+1); value = player who drew it (0 = empty)
+  let H, V;            // H[r][c]: horizontal lines (GRID+1 x GRID), V[r][c]: vertical lines (GRID x GRID+1); value = player who drew it (0 = empty)
   let boxes;           // boxes[r][c] = owner (0 = unclaimed)
   let current;         // 1 or 2
   let scores;
@@ -29,17 +29,13 @@
   let cpuTimer = null;
 
   // ---------- Setup ----------
-
-
-
   function newGame() {
     clearTimeout(cpuTimer);
-    R = C = 6;
     mode = modeSel.value;
     names = mode === "cpu" ? { 1: "You", 2: "Computer" } : { 1: "Player 1", 2: "Player 2" };
-    H = grid(R + 1, C);
-    V = grid(R, C + 1);
-    boxes = grid(R, C);
+    H = grid(GRID + 1, GRID);
+    V = grid(GRID, GRID + 1);
+    boxes = grid(GRID, GRID);
     current = 1;
     scores = { 1: 0, 2: 0 };
     busy = false;
@@ -66,11 +62,11 @@
   function buildBoard() {
     boardEl.innerHTML = "";
     boardEl.classList.remove("over", "locked");
-    els = { h: grid(R + 1, C), v: grid(R, C + 1), box: grid(R, C) };
+    els = { h: grid(GRID + 1, GRID), v: grid(GRID, GRID + 1), box: grid(GRID, GRID) };
     sizeBoard();
 
-    for (let gr = 0; gr <= 2 * R; gr++) {
-      for (let gc = 0; gc <= 2 * C; gc++) {
+    for (let gr = 0; gr <= 2 * GRID; gr++) {
+      for (let gc = 0; gc <= 2 * GRID; gc++) {
         const evenR = gr % 2 === 0, evenC = gc % 2 === 0;
         let el;
         if (evenR && evenC) {
@@ -106,10 +102,10 @@
 
   function sizeBoard() {
     const avail = Math.min(window.innerWidth - 64, 520);
-    const line = Math.max(28, Math.min(72, Math.floor((avail - (C + 1) * 14) / C)));
+    const line = Math.max(28, Math.min(72, Math.floor((avail - (GRID + 1) * 14) / GRID)));
     boardEl.style.setProperty("--line", line + "px");
-    boardEl.style.gridTemplateColumns = `repeat(${C}, var(--dot) var(--line)) var(--dot)`;
-    boardEl.style.gridTemplateRows    = `repeat(${R}, var(--dot) var(--line)) var(--dot)`;
+    boardEl.style.gridTemplateColumns = `repeat(${GRID}, var(--dot) var(--line)) var(--dot)`;
+    boardEl.style.gridTemplateRows    = `repeat(${GRID}, var(--dot) var(--line)) var(--dot)`;
   }
 
   // ---------- Rules helpers (work on any H/V so the AI can simulate) ----------
@@ -129,18 +125,18 @@
     const a = [];
     if (m.t === "h") {
       if (m.r > 0) a.push([m.r - 1, m.c]);
-      if (m.r < R) a.push([m.r, m.c]);
+      if (m.r < GRID) a.push([m.r, m.c]);
     } else {
       if (m.c > 0) a.push([m.r, m.c - 1]);
-      if (m.c < C) a.push([m.r, m.c]);
+      if (m.c < GRID) a.push([m.r, m.c]);
     }
     return a;
   }
 
   function availableMoves(h, v) {
     const moves = [];
-    for (let r = 0; r <= R; r++) for (let c = 0; c < C; c++) if (!h[r][c]) moves.push({ t: "h", r, c });
-    for (let r = 0; r < R; r++) for (let c = 0; c <= C; c++) if (!v[r][c]) moves.push({ t: "v", r, c });
+    for (let r = 0; r <= GRID; r++) for (let c = 0; c < GRID; c++) if (!h[r][c]) moves.push({ t: "h", r, c });
+    for (let r = 0; r < GRID; r++) for (let c = 0; c <= GRID; c++) if (!v[r][c]) moves.push({ t: "v", r, c });
     return moves;
   }
 
@@ -184,7 +180,7 @@
       }
     }
 
-    if (scores[1] + scores[2] === R * C) {
+    if (scores[1] + scores[2] === GRID * GRID) {
       over = true;
       updateUI();
       return;
