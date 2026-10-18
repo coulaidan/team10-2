@@ -62,7 +62,7 @@ label {
   flex-direction: column;
   gap: 4px;
   font-size: 0.72rem;
-  color: var(--muted);
+  color: color-mix(in srgb, var(--muted) 45%, transparent);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -208,6 +208,7 @@ button:hover { opacity: 0.85; }
   font-weight: 700;
   font-size: calc(var(--line) * 0.36);
   border-radius: 4px;
+  color: var(--muted);
 }
 .box.p1 {
   background: color-mix(in srgb, var(--p1) 20%, transparent);

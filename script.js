@@ -8,7 +8,7 @@
   const nameElements = { 1: document.getElementById("p1name"), 2: document.getElementById("p2name") };
   const muteButton = document.getElementById("mute");
 
-  const GRID = 5;
+  const GRID = 6;
 
   const music = new Audio("background_music.mp3");
   music.loop = true;
@@ -16,7 +16,8 @@
 
   // State
   let H, V; // For the lines, stores coordinates via H[r][c], the value is the player who owns it (0 = empty) 
-  let boxes; // Uses the same logic but for boxes
+  let boxes; // Each box stores its owner and point value.
+  let claimedBoxes;
   let current; // Current player (1 or 2)
   let scores;
   let mode;
@@ -24,7 +25,7 @@
   let busy; // Used for CPU mid move
   let over;
   let lastSelected = null;
-  let els;              // DOM refs: { h, v, box }
+  let els; // DOM refs: { h, v, box }
   let cpuTimer = null;
 
   // ---------- Setup ----------
@@ -38,9 +39,13 @@
     }
     H = grid(GRID + 1, GRID);
     V = grid(GRID, GRID + 1);
-    boxes = grid(GRID, GRID);
+    boxes = grid(GRID, GRID).map(row => row.map(() => ({
+      owner: 0,
+      value: Math.floor(Math.random() * 5) + 1
+    })));
     current = 1;
     scores = { 1: 0, 2: 0 };
+    claimedBoxes = 0;
     busy = false;
     over = false;
     lastSelected = null;
@@ -87,6 +92,8 @@
           const r = (gr - 1) / 2, c = (gc - 1) / 2;
           el = document.createElement("div");
           el.className = "box";
+          el.textContent = boxes[r][c].value;
+          el.setAttribute("aria-label", `${boxes[r][c].value} points`);
           els.box[r][c] = el;
         }
         boardElement.appendChild(el);
@@ -173,17 +180,19 @@
 
     let claimed = 0;
     for (const [r, c] of adjacentBoxes(m)) {
-      if (!boxes[r][c] && sides(H, V, r, c) === 4) {
-        boxes[r][c] = current;
-        scores[current]++;
+      const box = boxes[r][c];
+      if (!box.owner && sides(H, V, r, c) === 4) {
+        box.owner = current;
+        scores[current] += box.value;
+        claimedBoxes++;
         claimed++;
         const b = els.box[r][c];
         b.classList.add(`p${current}`);
-        b.textContent = mode === "cpu" ? names[current][0] : String(current);
+        b.setAttribute("aria-label", `${box.value} points, claimed by ${names[current]}`);
       }
     }
 
-    if (scores[1] + scores[2] === GRID * GRID) {
+    if (claimedBoxes === GRID * GRID) {
       over = true;
       updateUI();
       return;
