@@ -2,6 +2,8 @@
 :root {
   --dot: 14px;
   --line: 64px;
+  --p1: #1769aa;
+  --p2: #c43b3b;
 }
 
 h1, button, select, .score {
@@ -31,7 +33,7 @@ body {
   background-image: url("assets/76f675a861c5a5d13edff7490d97af16.gif");
   background-position: bottom center;
   background-repeat: repeat-x;
-  background-size: auto 100px;
+  background-size: 50%;
 }
 
 .app {
@@ -106,11 +108,19 @@ button {
 }
 
 .p1 .score, .box.p1 {
-  color: #1769aa;
+  color: var(--p1);
 }
 
 .p2 .score, .box.p2 {
-  color: #c43b3b;
+  color: var(--p2);
+}
+
+.box.p1 {
+  background-color: color-mix(in srgb, var(--p1) 18%, white);
+}
+
+.box.p2 {
+  background-color: color-mix(in srgb, var(--p2) 18%, white);
 }
 
 .status, .hint {
@@ -178,11 +188,11 @@ button {
 }
 
 .line.p1::after {
-  background: #1769aa;
+  background: var(--p1);
 }
 
 .line.p2::after {
-  background: #c43b3b;
+  background: var(--p2);
 }
 
 #board[data-turn="1"] { --turn-color: #1769aa; }
@@ -207,6 +217,7 @@ button {
   place-items: center;
   font-size: 1.5rem;
   font-weight: 700;
+  border-radius: 4px;
 }
 
 #restart {
