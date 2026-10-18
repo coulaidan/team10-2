@@ -8,7 +8,6 @@
   );
   
   const boardEl   = document.getElementById("board");
-  const sizeSel   = document.getElementById("size");
   const modeSel   = document.getElementById("mode");
   
   const onlinePanel = document.getElementById("onlinePanel");
@@ -32,9 +31,6 @@
   const nameE  = { 1: document.getElementById("p1name"),  2: document.getElementById("p2name") };
   const muteBt = document.getElementById("mute");
 
-  muteBt.addEventListener("pointerdown", startMusic, { once: true });
-
-  const DOT = 14;
   const CPU_DELAY = 450;
 
   const music = new Audio("background_music.mp3");
@@ -62,8 +58,7 @@
 
   function newGame() {
     clearTimeout(cpuTimer);
-    const n = parseInt(sizeSel.value, 10);
-    R = C = n;
+    R = C = 6;
     mode = modeSel.value;
     names = mode === "cpu" ? { 1: "You", 2: "Computer" } : { 1: "Player 1", 2: "Player 2" };
     H = grid(R + 1, C);
@@ -80,9 +75,11 @@
     updateUI();
   }
 
-  function startMusic() {
+  function updateMusic() {
     if (music.paused) {
      music.play().catch(err => console.warn("Music blocked or not found:", err));
+    } else {
+     music.pause();
     }
   }
 
@@ -133,7 +130,7 @@
 
   function sizeBoard() {
     const avail = Math.min(window.innerWidth - 64, 520);
-    const line = Math.max(28, Math.min(72, Math.floor((avail - (C + 1) * DOT) / C)));
+    const line = Math.max(28, Math.min(72, Math.floor((avail - (C + 1) * 14) / C)));
     boardEl.style.setProperty("--line", line + "px");
     boardEl.style.gridTemplateColumns = `repeat(${C}, var(--dot) var(--line)) var(--dot)`;
     boardEl.style.gridTemplateRows    = `repeat(${R}, var(--dot) var(--line)) var(--dot)`;
@@ -451,14 +448,8 @@
 
   // ---------- Events ----------
   restartBt.addEventListener("click", newGame);
-  sizeSel.addEventListener("change", newGame);
   modeSel.addEventListener("change", newGame);
-
-  let resizeTimer;
-  window.addEventListener("resize", () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(sizeBoard, 100);
-  });
+  muteBt.addEventListener("pointerdown", updateMusic);
 
 
   
