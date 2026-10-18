@@ -21,7 +21,7 @@
   let scores;
   let mode;
   let names;
-  let busy; // true while CPU is moving
+  let busy; // Used for CPU mid move
   let over;
   let lastEl = null;
   let els;             // DOM refs: { h, v, box }
@@ -63,8 +63,8 @@
   }
 
   function buildBoard() {
-    boardEl.innerHTML = "";
-    boardEl.classList.remove("over", "locked");
+    boardElement.innerHTML = "";
+    boardElement.classList.remove("over", "locked");
     els = { h: grid(GRID + 1, GRID), v: grid(GRID, GRID + 1), box: grid(GRID, GRID) };
     sizeBoard();
 
@@ -89,7 +89,7 @@
           el.className = "box";
           els.box[r][c] = el;
         }
-        boardEl.appendChild(el);
+        boardElement.appendChild(el);
       }
     }
   }
@@ -106,9 +106,9 @@
   function sizeBoard() {
     const avail = Math.min(window.innerWidth - 64, 520);
     const line = Math.max(28, Math.min(72, Math.floor((avail - (GRID + 1) * 14) / GRID)));
-    boardEl.style.setProperty("--line", line + "px");
-    boardEl.style.gridTemplateColumns = `repeat(${GRID}, var(--dot) var(--line)) var(--dot)`;
-    boardEl.style.gridTemplateRows    = `repeat(${GRID}, var(--dot) var(--line)) var(--dot)`;
+    boardElement.style.setProperty("--line", line + "px");
+    boardElement.style.gridTemplateColumns = `repeat(${GRID}, var(--dot) var(--line)) var(--dot)`;
+    boardElement.style.gridTemplateRows    = `repeat(${GRID}, var(--dot) var(--line)) var(--dot)`;
   }
 
   // ---------- Rules helpers (work on any H/V so the AI can simulate) ----------
@@ -155,7 +155,7 @@
 
   // ---------- Playing a move ----------
   function onHumanMove(m) {
-    if (over || busy) return;
+    if (busy) return;
     if (mode === "cpu" && current === 2) return;
     play(m);
   }
@@ -194,10 +194,10 @@
 
     if (mode === "cpu" && current === 2) {
       busy = true;
-      boardEl.classList.add("locked");
+      boardElement.classList.add("locked");
       cpuTimer = setTimeout(() => {
         busy = false;
-        boardEl.classList.remove("locked");
+        boardElement.classList.remove("locked");
         play(chooseCpuMove());
       }, 450);
     }
