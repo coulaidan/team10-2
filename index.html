@@ -13,8 +13,9 @@
     <div class="controls">
       <label>Mode
         <select id="mode">
-          <option value="cpu" selected>vs Computer</option>
-          <option value="pvp">2 Players</option>
+          <option value="cpu">vs Computer</option>
+          <option value="pvp">2 Players (same device)</option>
+          <option value="online">Online multiplayer</option>
         </select>
       </label>
       <label id="difficulty-control">CPU difficulty
@@ -29,6 +30,22 @@
         <img id="mute-icon" src="assets/TINGMuteButton2.webp" alt="">
       </button>
     </div>
+    <section id="onlinePanel" hidden>
+      <label for="roomCode">Room code</label>
+      <input
+        id="roomCode"
+        type="text"
+        maxlength="20"
+        placeholder="Enter room code"
+      >
+
+      <button id="createRoom" type="button">Create room</button>
+      <button id="joinRoom" type="button">Join room</button>
+
+      <p id="onlineStatus" aria-live="polite">
+        Create a room or join a friend's room.
+      </p>
+    </section>
 
     <div class="scoreboard">
       <div class="player p1" id="p1card">
@@ -54,6 +71,7 @@
     <p class="hint">Draw a line between two dots. Boxes are worth 1–5 points; complete one to claim its points and take another turn.</p>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
 </body>
 </html>

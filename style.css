@@ -195,8 +195,8 @@ button {
   background: var(--p2);
 }
 
-#board[data-turn="1"] { --turn-color: #1769aa; }
-#board[data-turn="2"] { --turn-color: #c43b3b; }
+#board[data-turn="1"] { --turn-color: var(--p1); }
+#board[data-turn="2"] { --turn-color: var(--p2); }
 .line:not(.taken):hover::after,
 .line:not(.taken):focus-visible::after {
   background: var(--turn-color);
@@ -257,4 +257,39 @@ button {
   background-color: white;
   border: 4px solid gray;
   border-radius: 25px;
+}
+
+/* ---------- Online multiplayer panel ---------- */
+#onlinePanel:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-radius: 12px;
+  background: var(--card);
+  width: 100%;
+}
+
+#onlinePanel label {
+  font-weight: bold;
+}
+
+#onlinePanel input {
+  max-width: 180px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+}
+
+#onlineStatus {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
 }

@@ -1,8 +1,18 @@
 (() => {
+  const supabase = window.supabase?.createClient(
+    "https://xomlgerxdwscrhvwkbep.supabase.co",
+    "sb_publishable_UtCf4_dgNi1ZXuS0zEmCBA_awV_jBXU"
+  );
+
   const boardElement = document.getElementById("board");
   const modeSelector = document.getElementById("mode");
   const difficultySelector = document.getElementById("difficulty");
   const difficultyControl = document.getElementById("difficulty-control");
+  const onlinePanel = document.getElementById("onlinePanel");
+  const roomCodeInput = document.getElementById("roomCode");
+  const createRoomBtn = document.getElementById("createRoom");
+  const joinRoomBtn = document.getElementById("joinRoom");
+  const onlineStatus = document.getElementById("onlineStatus");
   const restartBtn = document.getElementById("restart");
   const statusElement = document.getElementById("status");
   const cards = { 1: document.getElementById("p1card"), 2: document.getElementById("p2card") };
@@ -27,7 +37,6 @@
 
   const music = new Audio("assets/background_music.mp3");
   music.loop = true;
-  music.volume = 0.05;
 
   // State
   let H, V; // For the lines, stores coordinates via H[r][c], the value is the player who owns it (0 = empty) 
@@ -42,12 +51,18 @@
   let lastSelected = null;
   let els; // DOM refs: { h, v, box }
   let cpuTimer = null;
+  let onlinePollTimer = null;
+  let onlinePollInFlight = false;
 
   // ---------- Setup ----------
   function newGame() {
     clearTimeout(cpuTimer);
+    clearInterval(onlinePollTimer);
+    onlinePollTimer = null;
     mode = modeSelector.value;
     difficultyControl.hidden = mode !== "cpu";
+    onlinePanel.hidden = mode !== "online";
+    restartBtn.hidden = mode === "online";
     if (mode === "cpu") {
       names = { 1: "You", 2: "Computer" };
     } else {
@@ -68,6 +83,12 @@
     nameElements[1].textContent = names[1];
     nameElements[2].textContent = names[2];
     buildBoard();
+    const roomCode = sessionStorage.getItem("dotsRoomCode");
+    const playerToken = sessionStorage.getItem("dotsPlayerToken");
+    if (mode === "online" && roomCode && playerToken) {
+      setOnlineBoxValues(roomCode);
+      startOnlinePolling();
+    }
     updateUI();
   }
 
@@ -185,10 +206,17 @@
 
   // ---------- Playing a move ----------
   function onHumanMove(m) {
-    if (busy) return;
+    if (over || busy) return;
+
+    if (mode === "online") {
+      submitOnlineMove(m);
+      return;
+    }
+
     if (mode === "cpu" && current === 2) return;
     play(m);
   }
+
 
   function play(m) {
     if (isTaken(H, V, m)) return;
@@ -311,9 +339,9 @@
     cards[1].classList.toggle("active", !over && current === 1);
     cards[2].classList.toggle("active", !over && current === 2);
     statusElement.classList.toggle("win", over);
+    boardElement.classList.toggle("over", over);
 
     if (over) {
-      boardElement.classList.add("over");
       if (scores[1] === scores[2]) statusElement.textContent = "It's a draw!";
       else {
         const w = scores[1] > scores[2] ? 1 : 2;
@@ -327,6 +355,190 @@
       statusElement.textContent = `${names[current]}'s turn`;
     }
   }
+  function renderOnlineState(state) {
+    if (!state || !state.H || !state.V || !state.boxes) return;
+
+    H = state.H.map(row => row.slice());
+    V = state.V.map(row => row.slice());
+    current = Number(state.current);
+    boxes = grid(GRID, GRID).map((row, r) => row.map((_, c) => ({
+      owner: Number(state.boxes[r][c]),
+      value: boxes[r][c].value
+    })));
+    scores = { 1: 0, 2: 0 };
+    claimedBoxes = 0;
+    for (const row of boxes) {
+      for (const box of row) {
+        if (box.owner === 1 || box.owner === 2) {
+          scores[box.owner] += box.value;
+          claimedBoxes++;
+        }
+      }
+    }
+    over = Boolean(state.over) || claimedBoxes === GRID * GRID;
+    busy = false;
+    lastSelected = null;
+
+    // Redraw horizontal lines.
+    for (let r = 0; r < H.length; r++) {
+      for (let c = 0; c < H[r].length; c++) {
+        const el = els.h[r][c];
+        el.classList.remove("taken", "p1", "p2", "last");
+
+        if (H[r][c] !== 0) {
+          el.classList.add("taken", `p${H[r][c]}`);
+          el.setAttribute("aria-disabled", "true");
+        } else {
+          el.removeAttribute("aria-disabled");
+        }
+      }
+    }
+
+    // Redraw vertical lines.
+    for (let r = 0; r < V.length; r++) {
+      for (let c = 0; c < V[r].length; c++) {
+        const el = els.v[r][c];
+        el.classList.remove("taken", "p1", "p2", "last");
+
+        if (V[r][c] !== 0) {
+          el.classList.add("taken", `p${V[r][c]}`);
+          el.setAttribute("aria-disabled", "true");
+        } else {
+          el.removeAttribute("aria-disabled");
+        }
+      }
+    }
+
+    // Redraw completed boxes.
+    for (let r = 0; r < boxes.length; r++) {
+      for (let c = 0; c < boxes[r].length; c++) {
+        const el = els.box[r][c];
+        el.classList.remove("p1", "p2");
+        el.textContent = String(boxes[r][c].value);
+        el.setAttribute("aria-label", `${boxes[r][c].value} points`);
+
+        if (boxes[r][c].owner) {
+          el.classList.add(`p${boxes[r][c].owner}`);
+          el.setAttribute("aria-label", `${boxes[r][c].value} points, claimed by ${names[boxes[r][c].owner]}`);
+        }
+      }
+    }
+
+    updateUI();
+  }
+
+  function setOnlineBoxValues(roomCode) {
+    let seed = 0;
+    for (const char of roomCode.toUpperCase()) {
+      seed = (Math.imul(seed, 31) + char.charCodeAt(0)) >>> 0;
+    }
+
+    for (let r = 0; r < GRID; r++) {
+      for (let c = 0; c < GRID; c++) {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        boxes[r][c].value = (seed % 5) + 1;
+        els.box[r][c].textContent = String(boxes[r][c].value);
+        els.box[r][c].setAttribute("aria-label", `${boxes[r][c].value} points`);
+      }
+    }
+  }
+
+  async function submitOnlineMove(m) {
+    const roomCode = sessionStorage.getItem("dotsRoomCode");
+    const playerToken = sessionStorage.getItem("dotsPlayerToken");
+    const playerNumber = Number(
+      sessionStorage.getItem("dotsPlayerNumber") || "1"
+    );
+
+    if (!roomCode || !playerToken) {
+      onlineStatus.textContent = "Create or join a room first.";
+      return;
+    }
+
+    if (!supabase) {
+      onlineStatus.textContent = "Online multiplayer is unavailable. Please try again later.";
+      return;
+    }
+
+    if (current !== playerNumber) {
+      onlineStatus.textContent = "It's the other player's turn.";
+      return;
+    }
+
+    if (isTaken(H, V, m)) return;
+
+    busy = true;
+    boardElement.classList.add("locked");
+
+    try {
+      const { data, error } = await supabase.rpc("make_game_move", {
+        p_room_code: roomCode,
+        p_player_token: playerToken,
+        p_move_type: m.t,
+        p_row: m.r,
+        p_col: m.c
+      });
+
+      if (error) throw error;
+
+      if (modeSelector.value === "online" && sessionStorage.getItem("dotsRoomCode") === roomCode) {
+        renderOnlineState(data.state);
+        onlineStatus.textContent = `Playing in room ${roomCode}.`;
+      }
+    } catch (error) {
+      console.error("Online move failed:", error);
+      onlineStatus.textContent =
+        "Move wasn't saved. Refresh the game state and try again.";
+    } finally {
+      busy = false;
+      boardElement.classList.remove("locked");
+    }
+  }
+
+  async function refreshOnlineState() {
+    if (modeSelector.value !== "online" || onlinePollInFlight || busy) return;
+
+    const roomCode = sessionStorage.getItem("dotsRoomCode");
+    const playerToken = sessionStorage.getItem("dotsPlayerToken");
+
+    if (!roomCode || !playerToken) return;
+    if (!supabase) {
+      onlineStatus.textContent = "Online multiplayer is unavailable. Please try again later.";
+      return;
+    }
+
+    onlinePollInFlight = true;
+
+    try {
+      const { data, error } = await supabase.rpc("get_game_state", {
+        p_room_code: roomCode,
+        p_player_token: playerToken
+      });
+
+      if (error) throw error;
+
+      // A newly created room has no saved board yet.
+      if (modeSelector.value === "online" &&
+          sessionStorage.getItem("dotsRoomCode") === roomCode &&
+          data.state && Array.isArray(data.state.H)) {
+        renderOnlineState(data.state);
+      }
+    } catch (error) {
+      console.error("Refreshing online state failed:", error);
+      onlineStatus.textContent = "Couldn't refresh the game state. Retrying...";
+    } finally {
+      onlinePollInFlight = false;
+    }
+  }
+
+  function startOnlinePolling() {
+    clearInterval(onlinePollTimer);
+    onlinePollTimer = null;
+    if (modeSelector.value !== "online") return;
+
+    refreshOnlineState();
+    onlinePollTimer = setInterval(refreshOnlineState, 1500);
+  }
 
   // ---------- Events ----------
   restartBtn.addEventListener("click", newGame);
@@ -334,16 +546,72 @@
   difficultySelector.addEventListener("change", newGame);
   muteButton.addEventListener("click", updateMusic);
 
+  createRoomBtn.addEventListener("click", async () => {
+    if (!supabase) {
+      onlineStatus.textContent = "Online multiplayer is unavailable. Please try again later.";
+      return;
+    }
+
+    createRoomBtn.disabled = true;
+    onlineStatus.textContent = "Creating room...";
+
+    try {
+      const { data, error } = await supabase.rpc("create_game_room");
+      if (error) throw error;
+
+      sessionStorage.setItem("dotsPlayerToken", data.player_token);
+      sessionStorage.setItem("dotsRoomCode", data.room_code);
+      sessionStorage.setItem("dotsPlayerNumber", "1");
+
+      roomCodeInput.value = data.room_code;
+      setOnlineBoxValues(data.room_code);
+      onlineStatus.textContent = `Room created! Share code ${data.room_code} with your friend.`;
+      startOnlinePolling();
+    } catch (error) {
+      console.error("Create room failed:", error);
+      onlineStatus.textContent =
+        "Couldn't create the room. Check the browser console for details.";
+    } finally {
+      createRoomBtn.disabled = false;
+    }
+  });
+
+  joinRoomBtn.addEventListener("click", async () => {
+    if (!supabase) {
+      onlineStatus.textContent = "Online multiplayer is unavailable. Please try again later.";
+      return;
+    }
+
+    const roomCode = roomCodeInput.value.trim().toUpperCase();
+    if (!roomCode) {
+      onlineStatus.textContent = "Please enter a room code.";
+      return;
+    }
+
+    joinRoomBtn.disabled = true;
+    onlineStatus.textContent = "Joining room...";
+
+    try {
+      const { data, error } = await supabase.rpc("join_game_room", {
+        p_room_code: roomCode
+      });
+      if (error) throw error;
+
+      sessionStorage.setItem("dotsPlayerToken", data.player_token);
+      sessionStorage.setItem("dotsRoomCode", data.room_code);
+      sessionStorage.setItem("dotsPlayerNumber", String(data.player_number));
+
+      setOnlineBoxValues(data.room_code);
+      onlineStatus.textContent = `Joined room ${data.room_code} as Player 2!`;
+      startOnlinePolling();
+    } catch (error) {
+      console.error("Join room failed:", error);
+      onlineStatus.textContent =
+        "Couldn't join the room. Check the code and try again.";
+    } finally {
+      joinRoomBtn.disabled = false;
+    }
+  });
+
   newGame();
 })();
-
-const playerColorInputs = {
-  1: document.getElementById("p1-color"),
-  2: document.getElementById("p2-color")
-};
-
-for (const [player, input] of Object.entries(playerColorInputs)) {
-  input.addEventListener("input", () => {
-    document.documentElement.style.setProperty(`--p${player}`, input.value);
-  });
-}
