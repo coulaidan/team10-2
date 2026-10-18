@@ -15,11 +15,12 @@
   music.volume = 0.05;
 
   // State
-  let H, V;            // H[r][c]: horizontal lines (GRID+1 x GRID), V[r][c]: vertical lines (GRID x GRID+1); value = player who drew it (0 = empty)
-  let boxes;           // boxes[r][c] = owner (0 = unclaimed)
-  let current;         // 1 or 2
+  let H, V; // For the lines, stores coordinates via H[r][c], the value is the player who owns it (0 = empty) 
+  let boxes; // Uses the same logic but for boxes
+  
+  let current; // Current player (1 or 2)
   let scores;
-  let mode;            // "cpu" | "pvp"
+  let mode;
   let names;
   let busy;            // true while CPU is moving
   let over;
@@ -31,7 +32,11 @@
   function newGame() {
     clearTimeout(cpuTimer);
     mode = modeSel.value;
-    names = mode === "cpu" ? { 1: "You", 2: "Computer" } : { 1: "Player 1", 2: "Player 2" };
+    if (mode === "cpu") {
+      names = { 1: "You", 2: "Computer" };
+    } else {
+      names = { 1: "Player 1", 2: "Player 2" };
+    }
     H = grid(GRID + 1, GRID);
     V = grid(GRID, GRID + 1);
     boxes = grid(GRID, GRID);
