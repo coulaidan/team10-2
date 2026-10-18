@@ -139,8 +139,12 @@
   }
 
   function sizeBoard() {
-    const avail = Math.min(window.innerWidth - 64, 520);
-    const line = Math.max(28, Math.min(72, Math.floor((avail - (GRID + 1) * 14) / GRID)));
+    const boardStyle = window.getComputedStyle(boardElement);
+    const horizontalPadding = parseFloat(boardStyle.paddingLeft) + parseFloat(boardStyle.paddingRight);
+    const horizontalBorders = parseFloat(boardStyle.borderLeftWidth) + parseFloat(boardStyle.borderRightWidth);
+    const dot = parseFloat(boardStyle.getPropertyValue("--dot"));
+    const boardWidth = boardElement.parentElement.clientWidth - horizontalPadding - horizontalBorders;
+    const line = Math.max(8, Math.min(72, Math.floor((boardWidth - (GRID + 1) * dot) / GRID)));
     boardElement.style.setProperty("--line", line + "px");
     boardElement.style.gridTemplateColumns = `repeat(${GRID}, var(--dot) var(--line)) var(--dot)`;
     boardElement.style.gridTemplateRows    = `repeat(${GRID}, var(--dot) var(--line)) var(--dot)`;
@@ -333,6 +337,8 @@
   modeSelector.addEventListener("change", newGame);
   difficultySelector.addEventListener("change", newGame);
   muteButton.addEventListener("click", updateMusic);
+  window.addEventListener("resize", sizeBoard);
+  new ResizeObserver(sizeBoard).observe(boardElement.parentElement);
 
   newGame();
 })();
