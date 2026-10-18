@@ -215,6 +215,27 @@ button {
 }
 
 #mute {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
+  width: 64px;
+  height: 64px;
+  padding: 10px;
+  border: 0;
+  background: transparent;
+  background-color: gray;
+  border-radius: 20px;
+}
+
+#mute img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+#difficulty {
   background-color: white;
   border: 4px solid gray;
   border-radius: 25px;

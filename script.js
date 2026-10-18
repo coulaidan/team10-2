@@ -9,10 +9,11 @@
   const scoreElements = { 1: document.getElementById("p1score"), 2: document.getElementById("p2score") };
   const nameElements = { 1: document.getElementById("p1name"), 2: document.getElementById("p2name") };
   const muteButton = document.getElementById("mute");
+  const muteIcon = document.getElementById("mute-icon");
 
   const GRID = 6;
 
-  const music = new Audio("background_music.mp3");
+  const music = new Audio("assets/background_music.mp3");
   music.loop = true;
   music.volume = 0.05;
 
@@ -60,10 +61,22 @@
 
   function updateMusic() {
     if (music.paused) {
-     music.play();
+      music.play().then(() => setMusicButtonState(true)).catch(() => setMusicButtonState(false));
     } else {
-     music.pause();
+      music.pause();
+      setMusicButtonState(false);
     }
+  }
+
+  function setMusicButtonState(isPlaying) {
+    const label = isPlaying ? "Mute music" : "Play music";
+    if (isPlaying) {
+      muteIcon.src = "assets/TINGMuteButton.webp";
+    } else {
+      muteIcon.src = "assets/TINGMuteButton2.webp";
+    }
+    muteButton.setAttribute("aria-label", label);
+    muteButton.setAttribute("aria-pressed", String(isPlaying));
   }
 
   function grid(rows, cols) {
@@ -307,7 +320,7 @@
   restartBtn.addEventListener("click", newGame);
   modeSelector.addEventListener("change", newGame);
   difficultySelector.addEventListener("change", newGame);
-  muteButton.addEventListener("pointerdown", updateMusic);
+  muteButton.addEventListener("click", updateMusic);
 
   newGame();
 })();
