@@ -10,6 +10,18 @@
   const nameElements = { 1: document.getElementById("p1name"), 2: document.getElementById("p2name") };
   const muteButton = document.getElementById("mute");
   const muteIcon = document.getElementById("mute-icon");
+  const playerColorInputs = {
+    1: document.getElementById("p1-color"),
+    2: document.getElementById("p2-color")
+  };
+
+  for (const [player, input] of Object.entries(playerColorInputs)) {
+    const updatePlayerColor = () => {
+      document.documentElement.style.setProperty(`--p${player}`, input.value);
+    };
+    input.addEventListener("input", updatePlayerColor);
+    updatePlayerColor();
+  }
 
   const GRID = 6;
 
@@ -324,3 +336,14 @@
 
   newGame();
 })();
+
+const playerColorInputs = {
+  1: document.getElementById("p1-color"),
+  2: document.getElementById("p2-color")
+};
+
+for (const [player, input] of Object.entries(playerColorInputs)) {
+  input.addEventListener("input", () => {
+    document.documentElement.style.setProperty(`--p${player}`, input.value);
+  });
+}
