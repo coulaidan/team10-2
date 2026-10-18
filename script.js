@@ -1,12 +1,12 @@
 (() => {
-  const boardEl = document.getElementById("board");
-  const modeSel = document.getElementById("mode");
-  const restartBt = document.getElementById("restart");
-  const statusEl = document.getElementById("status");
+  const boardElement = document.getElementById("board");
+  const modeSelector = document.getElementById("mode");
+  const restartBtn = document.getElementById("restart");
+  const statusElement = document.getElementById("status");
   const cards = { 1: document.getElementById("p1card"), 2: document.getElementById("p2card") };
-  const scoreE = { 1: document.getElementById("p1score"), 2: document.getElementById("p2score") };
-  const nameE = { 1: document.getElementById("p1name"), 2: document.getElementById("p2name") };
-  const muteBt = document.getElementById("mute");
+  const scoreElements = { 1: document.getElementById("p1score"), 2: document.getElementById("p2score") };
+  const nameElements = { 1: document.getElementById("p1name"), 2: document.getElementById("p2name") };
+  const muteButton = document.getElementById("mute");
 
   const GRID = 6;
 
@@ -17,12 +17,11 @@
   // State
   let H, V; // For the lines, stores coordinates via H[r][c], the value is the player who owns it (0 = empty) 
   let boxes; // Uses the same logic but for boxes
-  
   let current; // Current player (1 or 2)
   let scores;
   let mode;
   let names;
-  let busy;            // true while CPU is moving
+  let busy; // true while CPU is moving
   let over;
   let lastEl = null;
   let els;             // DOM refs: { h, v, box }
@@ -31,7 +30,7 @@
   // ---------- Setup ----------
   function newGame() {
     clearTimeout(cpuTimer);
-    mode = modeSel.value;
+    mode = modeSelector.value;
     if (mode === "cpu") {
       names = { 1: "You", 2: "Computer" };
     } else {
@@ -45,8 +44,8 @@
     busy = false;
     over = false;
     lastEl = null;
-    nameE[1].textContent = names[1];
-    nameE[2].textContent = names[2];
+    nameElements[1].textContent = names[1];
+    nameElements[2].textContent = names[2];
     buildBoard();
     updateUI();
   }
@@ -247,33 +246,33 @@
 
   // ---------- UI ----------
   function updateUI() {
-    scoreE[1].textContent = scores[1];
-    scoreE[2].textContent = scores[2];
-    boardEl.dataset.turn = current;
+    scoreElements[1].textContent = scores[1];
+    scoreElements[2].textContent = scores[2];
+    boardElement.dataset.turn = current;
     cards[1].classList.toggle("active", !over && current === 1);
     cards[2].classList.toggle("active", !over && current === 2);
-    statusEl.classList.toggle("win", over);
+    statusElement.classList.toggle("win", over);
 
     if (over) {
-      boardEl.classList.add("over");
-      if (scores[1] === scores[2]) statusEl.textContent = "It's a draw!";
+      boardElement.classList.add("over");
+      if (scores[1] === scores[2]) statusElement.textContent = "It's a draw!";
       else {
         const w = scores[1] > scores[2] ? 1 : 2;
-        statusEl.textContent = mode === "cpu"
+        statusElement.textContent = mode === "cpu"
           ? (w === 1 ? "You win! 🎉" : "Computer wins!")
           : `${names[w]} wins! 🎉`;
       }
     } else if (mode === "cpu") {
-      statusEl.textContent = current === 1 ? "Your turn" : "Computer is thinking…";
+      statusElement.textContent = current === 1 ? "Your turn" : "Computer is thinking…";
     } else {
-      statusEl.textContent = `${names[current]}'s turn`;
+      statusElement.textContent = `${names[current]}'s turn`;
     }
   }
 
   // ---------- Events ----------
-  restartBt.addEventListener("click", newGame);
-  modeSel.addEventListener("change", newGame);
-  muteBt.addEventListener("pointerdown", updateMusic);
+  restartBtn.addEventListener("click", newGame);
+  modeSelector.addEventListener("change", newGame);
+  muteButton.addEventListener("pointerdown", updateMusic);
 
   newGame();
 })();
